@@ -3,7 +3,7 @@ add_library(ParallelismPass MODULE
     Parallelism.cpp
 )
 
-# Use C++11 to compile your pass (i.e., supply -std=c++11).
+# Use C++11 to compile our pass (i.e., supply -std=c++11).
 target_compile_features(ParallelismPass PRIVATE cxx_range_for cxx_auto_type)
 
 # LLVM is (typically) built with no C++ RTTI. We need to match that;
