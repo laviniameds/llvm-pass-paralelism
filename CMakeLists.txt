@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.13.4)
+cmake_minimum_required(VERSION 3.4)
 project(llvm-pass-parallelism)
 
 # we need LLVM_HOME in order to automatically set LLVM_DIR
@@ -16,4 +16,4 @@ if (${LLVM_VERSION_MAJOR} VERSION_GREATER_EQUAL 10)
     set(CMAKE_CXX_STANDARD 14)
 endif ()
 
-add_subdirectory(parallelism)  # pass name here.
+add_subdirectory(parallelism)  # Use your pass name here.
