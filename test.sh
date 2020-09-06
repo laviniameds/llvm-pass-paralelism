@@ -5,7 +5,6 @@ cd build/ && cmake .. && make && cd .. && echo ""\
 
 # testing pass
 src=$1
-src2=$2
 obj=${1%.c}.ll
 opt=${1%.c}.opt.ll
 
