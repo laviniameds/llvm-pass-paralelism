@@ -24,22 +24,9 @@ namespace {
 		}
 
 		void runOnBasicBlocks(Function &llvm_function) {
-			for (auto &bb_llvm : llvm_function.getBasicBlockList())
+			for (auto &bb_llvm : llvm_function.getBasicBlockList()){
 				runOnInstructions(llvm_function, bb_llvm);
-		}
-
-		int getOperatorType(int llvm_opCpde) {
-			if (llvm_opCpde >= llvm::Instruction::BinaryOps::BinaryOpsBegin && llvm_opCpde < llvm::Instruction::BinaryOpsEnd) {
-				return 1;
 			}
-			else if (llvm_opCpde >= llvm::Instruction::TermOpsBegin && llvm_opCpde < llvm::Instruction::TermOpsEnd) {
-				return 2;
-			}
-			else if (llvm_opCpde >= llvm::Instruction::OtherOpsBegin && llvm_opCpde < llvm::Instruction::OtherOpsEnd) {
-				return 3;
-			}
-			else
-				return -1;
 		}
 
 		void runOnBinaryInstruction(llvm::Instruction &llvm_instruction) {
@@ -60,16 +47,9 @@ namespace {
 
 		void runOnInstructions(Function &llvm_function, BasicBlock &bb_llvm) {
 			for (auto &llvm_instruction : bb_llvm.getInstList()) {
-				int llvm_opCpde = llvm_instruction.getOpcode();
-				int opType = getOperatorType(llvm_opCpde);
 
-				switch (opType) {
-				case 1:
+				if(llvm_instruction.isBinaryOp()){
 					runOnBinaryInstruction(llvm_instruction);
-					break;
-				default:
-					//errs() << "Other Instruction" << "\n";
-					break;
 				}
 			}
 		}
