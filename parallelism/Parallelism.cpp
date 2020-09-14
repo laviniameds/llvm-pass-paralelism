@@ -11,102 +11,96 @@ using namespace llvm;
 
 namespace {
 
-	//incremental global id
-	static long id_ = 1;
+	// struct Node{
+	// 	llvm::Value* value;
+	// 	std::string op_name;
+	// };
 
-	//return id as string
-	std::string next_id() {
-		return std::to_string(id_++);
-	}
-
+	//define llvm pass
 	struct ParallelismPass : public FunctionPass {
-		static char ID;
-		
-		ParallelismPass() : FunctionPass(ID) {}
-		std::multimap<llvm::Value*, std::string> list_bb_values;
 
+		//define pass ID
+		static char ID;
+		//define derivate from a FunctionPass class
+		ParallelismPass() : FunctionPass(ID) {}
+
+		//std::multimap<Node, bool> list_bb_values;
+
+		//run on each file function
 		virtual bool runOnFunction(Function &llvm_function) {
-			errs() << "I saw a function called " << llvm_function.getName() << "!\n";
+			//print funcion name
+			errs() << "Function: " << llvm_function.getName() << "\n\n";
+			//run on each function basic block 
 			runOnBasicBlocks(llvm_function);
-			printList();
 			
 			return false;
 		}
 
+		//run on each funcion basic block
 		void runOnBasicBlocks(Function &llvm_function) {
+			//foreach basic block
 			for (auto &bb_llvm : llvm_function.getBasicBlockList()){
+				//run on basick block instructions
 				runOnInstructions(llvm_function, bb_llvm);
 			}
 		}
 
-		std::string getBinaryOperatorName(int llvm_opCpde){
-			switch (llvm_opCpde) {
-				case llvm::Instruction::Add:
-				return "ADD";
-				break;
-				case llvm::Instruction::Sub:
-				return "SUB";
-				break;
-				case llvm::Instruction::Mul:
-				return "MUL";
-				break;
-				case llvm::Instruction::SDiv:
-				return "DIV";
-				break;
-				case llvm::Instruction::SRem:
-				return "MOD";
-				break;
-				case llvm::Instruction::Shl:
-				return "SHL";
-				break;
-				case llvm::Instruction::AShr:
-				return "ASHR";
-				break;
-				default:
-				return "BIN_OP_NOT_DEFINED";
-			}
-		}
+		//Cycles As Soon As Possible 
+		int asap(Instruction &llvm_instruction, BasicBlock &llvm_bb){
+			//if the instruction parent is not this same basic block, then it has no dependencies on this basic block. 
+			//Its parent comes from another basic block above. So its cycle is 0.
+			if (llvm_instruction.getParent() != &llvm_bb)
+				return 0;
 
-		void runOnBinaryInst(Instruction &llvm_instruction, BasicBlock &bb_llvm){
-			auto binary_instruction = llvm::dyn_cast<llvm::BinaryOperator>(&llvm_instruction);
+			//define var cycle
+			int cycle = 0;
 
-			std::string op_name = getBinaryOperatorName(binary_instruction->getOpcode()).append(next_id());
-
-			list_bb_values.insert({binary_instruction, op_name});
-
-			for(unsigned i = 0; i < binary_instruction->getNumOperands(); ++i){
-				list_bb_values.insert({binary_instruction->getOperand(i), op_name});
-			}
-		}
-
-		void runOnTermInst(Instruction &llvm_instruction, BasicBlock &bb_llvm){
-			std::string op_name = getBinaryOperatorName(llvm_instruction.getPrevNode()->getOpcode()).append(next_id());
-
+			//foreach instruction operands
 			for(unsigned i = 0; i < llvm_instruction.getNumOperands(); ++i){
-				list_bb_values.insert({llvm_instruction.getOperand(i), op_name});
+				//cast operand value as a instruction
+				Instruction *inst = llvm::dyn_cast<llvm::Instruction>(llvm_instruction.getOperand(i));
+				//if it is a instruction
+				if (inst)	
+					//cycle is always the max between the current value and the cycle value returned from recursion
+					cycle=std::max(cycle,1+asap(*inst,llvm_bb)); 
 			}
+			//return the cycle value
+			return cycle;
 		}
 
+		//run on instructions
 		void runOnInstructions(Function &llvm_function, BasicBlock &bb_llvm) {
-			for (auto &llvm_instruction : bb_llvm.getInstList()) {
-				auto debug_value_instruction = llvm::dyn_cast<llvm::DbgValueInst>(&llvm_instruction);
 
+			//print ASAP Cycles
+			errs() << "--- ASAP ---\n";
+			//foreach instruction on basick block
+			for (auto &llvm_instruction : bb_llvm.getInstList()) {
+				//cast instruction to debug instruction
+				auto debug_value_instruction = llvm::dyn_cast<llvm::DbgValueInst>(&llvm_instruction);
+				//if its not a debug instruction
 				if(!debug_value_instruction){
-					if(llvm_instruction.isBinaryOp()){
-						runOnBinaryInst(llvm_instruction,bb_llvm);
-					}
-					else if(llvm_instruction.isTerminator()){
-						runOnTermInst(llvm_instruction, bb_llvm);
-					}
+					//print the instruction asap cycle
+					errs() << " Cycle "<< asap(llvm_instruction,bb_llvm) <<  ": " << llvm_instruction << "\n";
 				}
 			}
 		}
+	
+		// void runOnBinaryInst(Instruction &llvm_instruction, BasicBlock &bb_llvm){
+		// 	auto binary_instruction = llvm::dyn_cast<llvm::BinaryOperator>(&llvm_instruction);
 
-		void printList(){
-			int i = 0;
-			for(auto const& it: list_bb_values)
-				errs() << ++i << " : " << it.first << " - " << it.second << "\n";
-		}
+		// 	std::string op_name = getBinaryOperatorName(binary_instruction->getOpcode()).append(next_id());
+
+		// 	Node node;
+		// 	node.value = binary_instruction;
+		// 	node.op_name = op_name;
+
+		// 	list_bb_values.insert({node, false});
+
+		// 	for(unsigned i = 0; i < binary_instruction->getNumOperands(); ++i){
+		// 		node.value = binary_instruction->getOperand(i);
+		// 		list_bb_values.insert({node, false});
+		// 	}
+		// }
 	};
 } // namespace llvm
 
