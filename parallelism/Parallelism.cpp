@@ -27,6 +27,7 @@ namespace {
 		//std::multimap<Node, bool> list_bb_values;
 		std::map<Instruction*, int> map_instr_cycle;
 		std::map<Instruction*, int>::iterator it_map_instr_cycle;
+		llvm::Value::use_iterator it_use_value;
 
 		//run on each file function
 		virtual bool runOnFunction(Function &llvm_function) {
@@ -80,10 +81,12 @@ namespace {
 			return cycle;
 		}
 
-		//Cycles As Late As Possible 
-		// int alap(Instruction &llvm_instruction, BasicBlock &llvm_bb, int cycle){
-		// 	//TODO
-		// }
+		void clearMap(std::map<Instruction*, int> *map_instr_cycle, int cycle){
+			for(auto it_map_instr_cycle = map_instr_cycle->begin(); it_use_value != map_instr_cycle->end(); ++it_use_value){
+				if(it_map_instr_cycle->second != cycle)
+					map_instr_cycle->erase(it_map_instr_cycle);
+			}
+		}
 
 		//run on instructions
 		void runOnInstructions(Function &llvm_function, BasicBlock &bb_llvm) {
@@ -102,6 +105,25 @@ namespace {
      				errs() << " Cycle "<< cycle <<  ": "<< llvm_instruction.getOpcodeName() << " (" << llvm_instruction << ")\n";
 				}
 			}
+
+			std::map<Instruction*, int> map_instr_cycle2(map_instr_cycle);
+			clearMap(&map_instr_cycle2, cycle);
+
+			//ALAP Cycles
+			errs() << "\n\n--- ALAP ---\n";
+			for (it_map_instr_cycle = map_instr_cycle.begin(); it_map_instr_cycle != map_instr_cycle.end(); ++it_map_instr_cycle) {
+				if(map_instr_cycle2.find(it_map_instr_cycle->first) == map_instr_cycle2.end()){
+					cycle = 0;
+					for(auto it_use_value = it_map_instr_cycle->first->user_begin(); it_use_value != it_map_instr_cycle->first->user_end(); ++it_use_value){
+						++cycle;
+					}
+					map_instr_cycle2.insert({it_map_instr_cycle->first, cycle - it_map_instr_cycle->second});	
+				}				
+			}
+			//print ALAP Cycles
+			for (it_map_instr_cycle = map_instr_cycle2.begin(); it_map_instr_cycle != map_instr_cycle2.end(); ++it_map_instr_cycle) {
+				errs() << " Cycle "<< it_map_instr_cycle->second <<  ": "<< it_map_instr_cycle->first->getOpcodeName() << " (" << it_map_instr_cycle->first << ")\n";
+			}			
 		}
 	
 		// void runOnBinaryInst(Instruction &llvm_instruction, BasicBlock &bb_llvm){
