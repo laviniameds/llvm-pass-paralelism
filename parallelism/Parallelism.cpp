@@ -25,6 +25,8 @@ namespace {
 		ParallelismPass() : FunctionPass(ID) {}
 
 		//std::multimap<Node, bool> list_bb_values;
+		std::map<Instruction*, int> map_instr_cycle;
+		std::map<Instruction*, int>::iterator it_map_instr_cycle;
 
 		//run on each file function
 		virtual bool runOnFunction(Function &llvm_function) {
@@ -60,33 +62,28 @@ namespace {
 				//cast operand value as a instruction
 				Instruction *inst = llvm::dyn_cast<llvm::Instruction>(llvm_instruction.getOperand(i));
 				//if it is a instruction
-				if (inst)	
-					//cycle is always the max between the current value and the cycle value returned from recursion
-					cycle=std::max(cycle,1+asap(*inst,llvm_bb)); 
+				if (inst){
+					//check if this intruction cycle is already in the map
+					it_map_instr_cycle = map_instr_cycle.find(&llvm_instruction);
+					//if it is just return the cycle value that was calculated
+					if(it_map_instr_cycle != map_instr_cycle.end())
+						return it_map_instr_cycle->second;
+					//else, calculate it
+					else{
+						//cycle is always the max between the current value and the cycle value returned from recursion
+						cycle=std::max(cycle,1+asap(*inst,llvm_bb)); 
+						map_instr_cycle.insert({inst, cycle});
+					}
+				}
 			}
 			//return the cycle value
 			return cycle;
 		}
 
-				//Cycles As Late As Possible 
-		int alap(Instruction &llvm_instruction, BasicBlock &llvm_bb, int cycle){
-			//if the instruction parent is not this same basic block, then it has no dependencies on this basic block. 
-			//Its parent comes from another basic block above. So its cycle is -1.
-			if (llvm_instruction.getParent() != &llvm_bb)
-				return -1;
-			
-			//foreach instruction operands
-			for(unsigned i = 0; i < llvm_instruction.getNumOperands(); ++i){
-				//cast operand value as a instruction
-				Instruction *inst = llvm::dyn_cast<llvm::Instruction>(llvm_instruction.getOperand(i));
-				//if it is a instruction
-				if (inst)	
-					//cycle is always the min between the current value and the cycle value returned from recursion
-					cycle=std::min(cycle,alap(*inst,llvm_bb, cycle)-1); 
-			}
-			//return the cycle value
-			return cycle;
-		}
+		//Cycles As Late As Possible 
+		// int alap(Instruction &llvm_instruction, BasicBlock &llvm_bb, int cycle){
+		// 	//TODO
+		// }
 
 		//run on instructions
 		void runOnInstructions(Function &llvm_function, BasicBlock &bb_llvm) {
@@ -102,18 +99,7 @@ namespace {
 				if(!debug_value_instruction){
 					cycle = asap(llvm_instruction,bb_llvm);
 					//print the instruction asap cycle
-					errs() << " Cycle "<< cycle <<  ": " << llvm_instruction << "\n";
-				}
-			}
-			errs() << "\n\n--- ALAP ---\n";
-			//foreach instruction on basick block
-			for (auto &llvm_instruction : bb_llvm.getInstList()) {
-				//cast instruction to debug instruction
-				auto debug_value_instruction = llvm::dyn_cast<llvm::DbgValueInst>(&llvm_instruction);
-				//if its not a debug instruction
-				if(!debug_value_instruction){
-					//print the instruction asap cycle
-					errs() << " Cycle "<< alap(llvm_instruction,bb_llvm, cycle) << ": " << llvm_instruction << "\n";
+     				errs() << " Cycle "<< cycle <<  ": "<< llvm_instruction.getOpcodeName() << " (" << llvm_instruction << ")\n";
 				}
 			}
 		}
