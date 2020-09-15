@@ -29,7 +29,7 @@ namespace {
 		//run on each file function
 		virtual bool runOnFunction(Function &llvm_function) {
 			//print funcion name
-			errs() << "Function: " << llvm_function.getName() << "\n\n";
+			errs() << "Function: " << llvm_function.getName() << "\n";
 			//run on each function basic block 
 			runOnBasicBlocks(llvm_function);
 			
@@ -48,9 +48,9 @@ namespace {
 		//Cycles As Soon As Possible 
 		int asap(Instruction &llvm_instruction, BasicBlock &llvm_bb){
 			//if the instruction parent is not this same basic block, then it has no dependencies on this basic block. 
-			//Its parent comes from another basic block above. So its cycle is 0.
+			//Its parent comes from another basic block above. So its cycle is -1.
 			if (llvm_instruction.getParent() != &llvm_bb)
-				return 0;
+				return -1;
 
 			//define var cycle
 			int cycle = 0;
@@ -68,11 +68,44 @@ namespace {
 			return cycle;
 		}
 
+				//Cycles As Late As Possible 
+		int alap(Instruction &llvm_instruction, BasicBlock &llvm_bb, int cycle){
+			//if the instruction parent is not this same basic block, then it has no dependencies on this basic block. 
+			//Its parent comes from another basic block above. So its cycle is -1.
+			if (llvm_instruction.getParent() != &llvm_bb)
+				return -1;
+			
+			//foreach instruction operands
+			for(unsigned i = 0; i < llvm_instruction.getNumOperands(); ++i){
+				//cast operand value as a instruction
+				Instruction *inst = llvm::dyn_cast<llvm::Instruction>(llvm_instruction.getOperand(i));
+				//if it is a instruction
+				if (inst)	
+					//cycle is always the min between the current value and the cycle value returned from recursion
+					cycle=std::min(cycle,alap(*inst->getNextNode(),llvm_bb, cycle)-1); 
+			}
+			//return the cycle value
+			return cycle;
+		}
+
 		//run on instructions
 		void runOnInstructions(Function &llvm_function, BasicBlock &bb_llvm) {
+			int cycle = 0;
 
 			//print ASAP Cycles
-			errs() << "--- ASAP ---\n";
+			errs() << "\n\n--- ASAP ---\n";
+			//foreach instruction on basick block
+			for (auto &llvm_instruction : bb_llvm.getInstList()) {
+				//cast instruction to debug instruction
+				auto debug_value_instruction = llvm::dyn_cast<llvm::DbgValueInst>(&llvm_instruction);
+				//if its not a debug instruction
+				if(!debug_value_instruction){
+					cycle = asap(llvm_instruction,bb_llvm);
+					//print the instruction asap cycle
+					errs() << " Cycle "<< cycle <<  ": " << llvm_instruction << "\n";
+				}
+			}
+			errs() << "\n\n--- ALAP ---\n";
 			//foreach instruction on basick block
 			for (auto &llvm_instruction : bb_llvm.getInstList()) {
 				//cast instruction to debug instruction
@@ -80,7 +113,7 @@ namespace {
 				//if its not a debug instruction
 				if(!debug_value_instruction){
 					//print the instruction asap cycle
-					errs() << " Cycle "<< asap(llvm_instruction,bb_llvm) <<  ": " << llvm_instruction << "\n";
+					errs() << " Cycle "<< alap(llvm_instruction,bb_llvm, cycle) << ": " << llvm_instruction << "\n";
 				}
 			}
 		}
