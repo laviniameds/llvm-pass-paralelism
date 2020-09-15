@@ -63,7 +63,7 @@ namespace {
 				Instruction *inst = llvm::dyn_cast<llvm::Instruction>(llvm_instruction.getOperand(i));
 				//if it is a instruction
 				if (inst){
-					//check if this intruction cycle is already in the map
+					//check if this instruction cycle is already in the map
 					it_map_instr_cycle = map_instr_cycle.find(&llvm_instruction);
 					//if it is just return the cycle value that was calculated
 					if(it_map_instr_cycle != map_instr_cycle.end())
