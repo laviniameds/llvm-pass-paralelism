@@ -73,6 +73,7 @@ namespace {
 					cycle=std::max(cycle,1+asap(*inst,llvm_bb)); 
 				}
 			}
+			//insert instruction and cycle value in the map
 			map_instr_cycle.insert({&llvm_instruction, cycle});
 
 			//return the cycle value
