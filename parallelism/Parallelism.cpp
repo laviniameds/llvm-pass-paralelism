@@ -57,23 +57,21 @@ namespace {
 			//define var cycle
 			int cycle = 0;
 
+			//check if this instruction cycle is already in the map
+			it_map_instr_cycle = map_instr_cycle.find(&llvm_instruction);
+			//if it is just return the cycle value that was calculated
+			if(it_map_instr_cycle != map_instr_cycle.end())
+				return it_map_instr_cycle->second;
+
 			//foreach instruction operands
 			for(unsigned i = 0; i < llvm_instruction.getNumOperands(); ++i){
 				//cast operand value as a instruction
 				Instruction *inst = llvm::dyn_cast<llvm::Instruction>(llvm_instruction.getOperand(i));
 				//if it is a instruction
 				if (inst){
-					//check if this instruction cycle is already in the map
-					it_map_instr_cycle = map_instr_cycle.find(&llvm_instruction);
-					//if it is just return the cycle value that was calculated
-					if(it_map_instr_cycle != map_instr_cycle.end())
-						return it_map_instr_cycle->second;
-					//else, calculate it
-					else{
-						//cycle is always the max between the current value and the cycle value returned from recursion
-						cycle=std::max(cycle,1+asap(*inst,llvm_bb)); 
-						map_instr_cycle.insert({inst, cycle});
-					}
+					//cycle is always the max between the current value and the cycle value returned from recursion
+					cycle=std::max(cycle,1+asap(*inst,llvm_bb)); 
+					map_instr_cycle.insert({inst, cycle});
 				}
 			}
 			//return the cycle value
