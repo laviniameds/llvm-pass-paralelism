@@ -71,9 +71,10 @@ namespace {
 				if (inst){
 					//cycle is always the max between the current value and the cycle value returned from recursion
 					cycle=std::max(cycle,1+asap(*inst,llvm_bb)); 
-					map_instr_cycle.insert({inst, cycle});
 				}
 			}
+			map_instr_cycle.insert({&llvm_instruction, cycle});
+
 			//return the cycle value
 			return cycle;
 		}
