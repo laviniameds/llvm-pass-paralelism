@@ -82,7 +82,7 @@ namespace {
 				//if it is a instruction
 				if (inst)	
 					//cycle is always the min between the current value and the cycle value returned from recursion
-					cycle=std::min(cycle,alap(*inst->getNextNode(),llvm_bb, cycle)-1); 
+					cycle=std::min(cycle,alap(*inst,llvm_bb, cycle)-1); 
 			}
 			//return the cycle value
 			return cycle;
