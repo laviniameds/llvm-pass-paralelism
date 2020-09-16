@@ -25,8 +25,11 @@ namespace {
 		ParallelismPass() : FunctionPass(ID) {}
 
 		//std::multimap<Node, bool> list_bb_values;
-		std::map<Instruction*, int> map_instr_cycle;
+		std::map<Instruction*, int> map_instr_cycle_asap;
+		std::map<Instruction*, int> map_instr_cycle_alap;
 		std::map<Instruction*, int>::iterator it_map_instr_cycle;
+		std::map<Instruction*, int>::reverse_iterator r_it_map_instr_cycle;
+
 		llvm::Value::use_iterator it_use_value;
 
 		//run on each file function
@@ -59,9 +62,9 @@ namespace {
 			int cycle = 0;
 
 			//check if this instruction cycle is already in the map
-			it_map_instr_cycle = map_instr_cycle.find(&llvm_instruction);
+			it_map_instr_cycle = map_instr_cycle_asap.find(&llvm_instruction);
 			//if it is just return the cycle value that was calculated
-			if(it_map_instr_cycle != map_instr_cycle.end())
+			if(it_map_instr_cycle != map_instr_cycle_asap.end())
 				return it_map_instr_cycle->second;
 
 			//foreach instruction operands
@@ -75,7 +78,37 @@ namespace {
 				}
 			}
 			//insert instruction and cycle value in the map
-			map_instr_cycle.insert({&llvm_instruction, cycle});
+			map_instr_cycle_asap.insert({&llvm_instruction, cycle});
+
+			//return the cycle value
+			return cycle;
+		}
+
+		int alap(Instruction &llvm_instruction, BasicBlock &llvm_bb, int cycle){
+			//if the instruction parent is not this same basic block, then it has no dependencies on this basic block. 
+			//Its parent comes from another basic block above. So its cycle is -1.
+			if (llvm_instruction.getParent() != &llvm_bb)
+				return -1;
+
+			//check if this instruction cycle is already in the map
+			it_map_instr_cycle = map_instr_cycle_alap.find(&llvm_instruction);
+			//if it is just return the cycle value that was calculated
+			if(it_map_instr_cycle != map_instr_cycle_alap.end())
+				return it_map_instr_cycle->second;
+
+			//foreach instruction operands
+			for(auto it_use_value = llvm_instruction.user_begin(); it_use_value != llvm_instruction.user_end(); ++it_use_value){
+				//cast operand value as a instruction
+				Instruction *inst = llvm::dyn_cast<llvm::Instruction>(*it_use_value);
+				//if it is a instruction
+				if (inst){
+					//cycle is always the max between the current value and the cycle value returned from recursion
+					cycle=std::min(cycle,alap(*inst,llvm_bb, cycle)-1); 
+					if(cycle < 0) cycle = 0;
+				}
+			}
+			//insert instruction and cycle value in the map
+			map_instr_cycle_alap.insert({&llvm_instruction, cycle});
 
 			//return the cycle value
 			return cycle;
@@ -106,25 +139,15 @@ namespace {
 				}
 			}
 
-			//creates a new map
-			std::map<Instruction*, int> map_instr_cycle2;
-			//leave it only with the last cycle instructions
-			mapModify(&map_instr_cycle2, cycle);
-
 			//ALAP Cycles
 			errs() << "\n\n--- ALAP ---\n";
-			//foreach ASAP instructions with their matching cycles
-			for (it_map_instr_cycle = map_instr_cycle.begin(); it_map_instr_cycle != map_instr_cycle.end(); ++it_map_instr_cycle) {
-				//if the instruction is not in the second map
-				if(map_instr_cycle2.find(it_map_instr_cycle->first) == map_instr_cycle2.end()){
-					//get the number of uses
-					cycle = it_map_instr_cycle->first->getNumUses();
-					//add the instruction to the map, update the cycle
-					map_instr_cycle2.insert({it_map_instr_cycle->first, it_map_instr_cycle->second - cycle});	
-				}				
+			for (r_it_map_instr_cycle = map_instr_cycle_asap.rbegin(); r_it_map_instr_cycle != map_instr_cycle_asap.rend(); ++r_it_map_instr_cycle) {
+				cycle = alap(*r_it_map_instr_cycle->first,bb_llvm, cycle);
+				//errs() << " Cycle "<< cycle <<  ": "<< r_it_map_instr_cycle->first->getOpcodeName() << " (" << *r_it_map_instr_cycle->first << ")\n";								
 			}
+
 			//print ALAP Cycles
-			for (it_map_instr_cycle = map_instr_cycle2.begin(); it_map_instr_cycle != map_instr_cycle2.end(); ++it_map_instr_cycle) {
+			for (it_map_instr_cycle = map_instr_cycle_alap.begin(); it_map_instr_cycle != map_instr_cycle_alap.end(); ++it_map_instr_cycle) {
 				errs() << " Cycle "<< it_map_instr_cycle->second <<  ": "<< it_map_instr_cycle->first->getOpcodeName() << " (" << *it_map_instr_cycle->first << ")\n";
 			}			
 		}
