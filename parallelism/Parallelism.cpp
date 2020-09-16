@@ -24,6 +24,8 @@ namespace {
 		std::map<Instruction*, int>::iterator it_map_instr_cycle;
 		std::map<Instruction*, int>::reverse_iterator r_it_map_instr_cycle;
 
+		int greatest_cycle = 0;
+
 		//run on each file function
 		virtual bool runOnFunction(Function &llvm_function) {
 			//print funcion name
@@ -71,6 +73,9 @@ namespace {
 			}
 			//insert instruction and cycle value in the map
 			map_instr_cycle_asap.insert({&llvm_instruction, cycle});
+
+			//get greatest number of cycles
+			if(cycle > greatest_cycle) greatest_cycle = cycle;
 
 			//return the cycle value
 			return cycle;
@@ -128,7 +133,7 @@ namespace {
 			errs() << "\n\n--- ALAP ---\n";
 			//use reverse iterator to go through instructions
 			for (r_it_map_instr_cycle = map_instr_cycle_asap.rbegin(); r_it_map_instr_cycle != map_instr_cycle_asap.rend(); ++r_it_map_instr_cycle) {
-				alap(*r_it_map_instr_cycle->first,bb_llvm, cycle);
+				alap(*r_it_map_instr_cycle->first,bb_llvm, greatest_cycle);
 			}
 			//print ALAP Cycles
 			for (it_map_instr_cycle = map_instr_cycle_alap.begin(); it_map_instr_cycle != map_instr_cycle_alap.end(); ++it_map_instr_cycle) {
