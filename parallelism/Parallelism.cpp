@@ -96,13 +96,13 @@ namespace {
 			if(it_map_instr_cycle != map_instr_cycle_alap.end())
 				return it_map_instr_cycle->second;
 
-			//foreach instruction operands
+			//foreach instruction use values
 			for(auto it_use_value = llvm_instruction.user_begin(); it_use_value != llvm_instruction.user_end(); ++it_use_value){
-				//cast operand value as a instruction
+				//cast use value as a instruction
 				Instruction *inst = llvm::dyn_cast<llvm::Instruction>(*it_use_value);
 				//if it is a instruction
 				if (inst){
-					//cycle is always the max between the current value and the cycle value returned from recursion
+					//cycle is always the min between the current value and the cycle value returned from recursion
 					cycle=std::min(cycle,alap(*inst,llvm_bb, cycle)-1); 
 				}
 			}
@@ -112,14 +112,7 @@ namespace {
 			//return the cycle value
 			return cycle;
 		}
-
-		void mapModify(std::map<Instruction*, int> *map_instr_cycle, int cycle){
-			for(it_map_instr_cycle = map_instr_cycle->begin(); it_map_instr_cycle != map_instr_cycle->end(); ++it_map_instr_cycle){
-				if(it_map_instr_cycle->second == cycle)
-					map_instr_cycle->insert({it_map_instr_cycle->first, it_map_instr_cycle->second});
-			}
-		}
-
+		
 		//run on instructions
 		void runOnInstructions(Function &llvm_function, BasicBlock &bb_llvm) {
 			int cycle = 0;
