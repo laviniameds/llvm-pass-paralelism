@@ -18,7 +18,7 @@ namespace {
 		//define derivate from a FunctionPass class
 		ParallelismPass() : FunctionPass(ID) {}
 
-		//std::multimap<Node, bool> list_bb_values;
+		//define maps and their iterators
 		std::map<Instruction*, int> map_instr_cycle_asap;
 		std::map<Instruction*, int> map_instr_cycle_alap;
 		std::map<Instruction*, int>::iterator it_map_instr_cycle;
