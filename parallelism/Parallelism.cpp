@@ -82,7 +82,7 @@ namespace {
 		}
 
 		void clearMap(std::map<Instruction*, int> *map_instr_cycle, int cycle){
-			for(auto it_map_instr_cycle = map_instr_cycle->begin(); it_use_value != map_instr_cycle->end(); ++it_use_value){
+			for(it_map_instr_cycle = map_instr_cycle->begin(); it_map_instr_cycle != map_instr_cycle->end(); ++it_map_instr_cycle){
 				if(it_map_instr_cycle->second != cycle)
 					map_instr_cycle->erase(it_map_instr_cycle);
 			}
