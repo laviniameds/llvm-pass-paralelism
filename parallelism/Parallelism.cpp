@@ -10,12 +10,6 @@
 using namespace llvm;
 
 namespace {
-
-	// struct Node{
-	// 	llvm::Value* value;
-	// 	std::string op_name;
-	// };
-
 	//define llvm pass
 	struct ParallelismPass : public FunctionPass {
 
@@ -141,23 +135,6 @@ namespace {
 				errs() << " Cycle "<< it_map_instr_cycle->second <<  ": "<< it_map_instr_cycle->first->getOpcodeName() << " (" << *it_map_instr_cycle->first << ")\n";
 			}			
 		}
-	
-		// void runOnBinaryInst(Instruction &llvm_instruction, BasicBlock &bb_llvm){
-		// 	auto binary_instruction = llvm::dyn_cast<llvm::BinaryOperator>(&llvm_instruction);
-
-		// 	std::string op_name = getBinaryOperatorName(binary_instruction->getOpcode()).append(next_id());
-
-		// 	Node node;
-		// 	node.value = binary_instruction;
-		// 	node.op_name = op_name;
-
-		// 	list_bb_values.insert({node, false});
-
-		// 	for(unsigned i = 0; i < binary_instruction->getNumOperands(); ++i){
-		// 		node.value = binary_instruction->getOperand(i);
-		// 		list_bb_values.insert({node, false});
-		// 	}
-		// }
 	};
 } // namespace llvm
 
