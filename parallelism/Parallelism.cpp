@@ -81,10 +81,10 @@ namespace {
 			return cycle;
 		}
 
-		void clearMap(std::map<Instruction*, int> *map_instr_cycle, int cycle){
+		void copyMap(std::map<Instruction*, int> *map_instr_cycle, int cycle){
 			for(it_map_instr_cycle = map_instr_cycle->begin(); it_map_instr_cycle != map_instr_cycle->end(); ++it_map_instr_cycle){
-				if(it_map_instr_cycle->second != cycle)
-					map_instr_cycle->erase(it_map_instr_cycle);
+				if(it_map_instr_cycle->second == cycle)
+					map_instr_cycle->insert({it_map_instr_cycle->first, it_map_instr_cycle->second});
 			}
 		}
 
@@ -106,8 +106,8 @@ namespace {
 				}
 			}
 
-			std::map<Instruction*, int> map_instr_cycle2(map_instr_cycle);
-			clearMap(&map_instr_cycle2, cycle);
+			std::map<Instruction*, int> map_instr_cycle2;
+			copyMap(&map_instr_cycle2, cycle);
 
 			//ALAP Cycles
 			errs() << "\n\n--- ALAP ---\n";
