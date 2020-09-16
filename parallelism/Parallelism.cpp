@@ -104,7 +104,6 @@ namespace {
 				if (inst){
 					//cycle is always the max between the current value and the cycle value returned from recursion
 					cycle=std::min(cycle,alap(*inst,llvm_bb, cycle)-1); 
-					if(cycle < 0) cycle = 0;
 				}
 			}
 			//insert instruction and cycle value in the map
