@@ -114,7 +114,7 @@ namespace {
 			for (it_map_instr_cycle = map_instr_cycle.begin(); it_map_instr_cycle != map_instr_cycle.end(); ++it_map_instr_cycle) {
 				if(map_instr_cycle2.find(it_map_instr_cycle->first) == map_instr_cycle2.end()){
 					cycle = it_map_instr_cycle->first->getNumUses();
-					map_instr_cycle2.insert({it_map_instr_cycle->first, cycle - it_map_instr_cycle->second});	
+					map_instr_cycle2.insert({it_map_instr_cycle->first, it_map_instr_cycle->second});	
 				}				
 			}
 			//print ALAP Cycles
