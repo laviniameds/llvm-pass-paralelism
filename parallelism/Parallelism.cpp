@@ -113,10 +113,7 @@ namespace {
 			errs() << "\n\n--- ALAP ---\n";
 			for (it_map_instr_cycle = map_instr_cycle.begin(); it_map_instr_cycle != map_instr_cycle.end(); ++it_map_instr_cycle) {
 				if(map_instr_cycle2.find(it_map_instr_cycle->first) == map_instr_cycle2.end()){
-					cycle = 0;
-					for(auto it_use_value = it_map_instr_cycle->first->user_begin(); it_use_value != it_map_instr_cycle->first->user_end(); ++it_use_value){
-						++cycle;
-					}
+					cycle = it_map_instr_cycle->first->getNumUses();
 					map_instr_cycle2.insert({it_map_instr_cycle->first, cycle - it_map_instr_cycle->second});	
 				}				
 			}
