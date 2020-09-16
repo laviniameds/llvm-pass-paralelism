@@ -82,6 +82,7 @@ namespace {
 			return cycle;
 		}
 
+		//Cycles As Late As Possible
 		int alap(Instruction &llvm_instruction, BasicBlock &llvm_bb, int cycle){
 			//if the instruction parent is not this same basic block, then it has no dependencies on this basic block. 
 			//Its parent comes from another basic block above. So its cycle is -1.
@@ -93,7 +94,7 @@ namespace {
 			//if it is just return the cycle value that was calculated
 			if(it_map_instr_cycle != map_instr_cycle_alap.end())
 				return it_map_instr_cycle->second;
-				
+
 			//foreach instruction "use values"
 			for(auto it_user_value = llvm_instruction.user_begin(); it_user_value != llvm_instruction.user_end(); ++it_user_value){
 				//cast "use value" as a instruction
