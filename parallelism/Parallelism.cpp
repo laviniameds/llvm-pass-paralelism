@@ -119,7 +119,7 @@ namespace {
 			}
 			//print ALAP Cycles
 			for (it_map_instr_cycle = map_instr_cycle2.begin(); it_map_instr_cycle != map_instr_cycle2.end(); ++it_map_instr_cycle) {
-				errs() << " Cycle "<< it_map_instr_cycle->second <<  ": "<< it_map_instr_cycle->first->getOpcodeName() << " (" << it_map_instr_cycle->first << ")\n";
+				errs() << " Cycle "<< it_map_instr_cycle->second <<  ": "<< it_map_instr_cycle->first->getOpcodeName() << " (" << *it_map_instr_cycle->first << ")\n";
 			}			
 		}
 	
