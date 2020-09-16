@@ -30,8 +30,6 @@ namespace {
 		std::map<Instruction*, int>::iterator it_map_instr_cycle;
 		std::map<Instruction*, int>::reverse_iterator r_it_map_instr_cycle;
 
-		llvm::Value::use_iterator it_use_value;
-
 		//run on each file function
 		virtual bool runOnFunction(Function &llvm_function) {
 			//print funcion name
@@ -95,11 +93,11 @@ namespace {
 			//if it is just return the cycle value that was calculated
 			if(it_map_instr_cycle != map_instr_cycle_alap.end())
 				return it_map_instr_cycle->second;
-
-			//foreach instruction use values
-			for(auto it_use_value = llvm_instruction.user_begin(); it_use_value != llvm_instruction.user_end(); ++it_use_value){
-				//cast use value as a instruction
-				Instruction *inst = llvm::dyn_cast<llvm::Instruction>(*it_use_value);
+				
+			//foreach instruction "use values"
+			for(auto it_user_value = llvm_instruction.user_begin(); it_user_value != llvm_instruction.user_end(); ++it_user_value){
+				//cast "use value" as a instruction
+				Instruction *inst = llvm::dyn_cast<llvm::Instruction>(*it_user_value);
 				//if it is a instruction
 				if (inst){
 					//cycle is always the min between the current value and the cycle value returned from recursion
@@ -133,11 +131,10 @@ namespace {
 
 			//ALAP Cycles
 			errs() << "\n\n--- ALAP ---\n";
+			//use reverse iterator to go through instructions
 			for (r_it_map_instr_cycle = map_instr_cycle_asap.rbegin(); r_it_map_instr_cycle != map_instr_cycle_asap.rend(); ++r_it_map_instr_cycle) {
-				cycle = alap(*r_it_map_instr_cycle->first,bb_llvm, cycle);
-				//errs() << " Cycle "<< cycle <<  ": "<< r_it_map_instr_cycle->first->getOpcodeName() << " (" << *r_it_map_instr_cycle->first << ")\n";								
+				alap(*r_it_map_instr_cycle->first,bb_llvm, cycle);
 			}
-
 			//print ALAP Cycles
 			for (it_map_instr_cycle = map_instr_cycle_alap.begin(); it_map_instr_cycle != map_instr_cycle_alap.end(); ++it_map_instr_cycle) {
 				errs() << " Cycle "<< it_map_instr_cycle->second <<  ": "<< it_map_instr_cycle->first->getOpcodeName() << " (" << *it_map_instr_cycle->first << ")\n";
