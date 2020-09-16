@@ -81,7 +81,7 @@ namespace {
 			return cycle;
 		}
 
-		void copyMap(std::map<Instruction*, int> *map_instr_cycle, int cycle){
+		void mapModify(std::map<Instruction*, int> *map_instr_cycle, int cycle){
 			for(it_map_instr_cycle = map_instr_cycle->begin(); it_map_instr_cycle != map_instr_cycle->end(); ++it_map_instr_cycle){
 				if(it_map_instr_cycle->second == cycle)
 					map_instr_cycle->insert({it_map_instr_cycle->first, it_map_instr_cycle->second});
@@ -106,14 +106,20 @@ namespace {
 				}
 			}
 
+			//creates a new map
 			std::map<Instruction*, int> map_instr_cycle2;
-			copyMap(&map_instr_cycle2, cycle);
+			//leave it only with the last cycle instructions
+			mapModify(&map_instr_cycle2, cycle);
 
 			//ALAP Cycles
 			errs() << "\n\n--- ALAP ---\n";
+			//foreach ASAP instructions with their matching cycles
 			for (it_map_instr_cycle = map_instr_cycle.begin(); it_map_instr_cycle != map_instr_cycle.end(); ++it_map_instr_cycle) {
+				//if the instruction is not in the second map
 				if(map_instr_cycle2.find(it_map_instr_cycle->first) == map_instr_cycle2.end()){
+					//get the number of uses
 					cycle = it_map_instr_cycle->first->getNumUses();
+					//add the instruction to the map, update the cycle
 					map_instr_cycle2.insert({it_map_instr_cycle->first, it_map_instr_cycle->second - cycle});	
 				}				
 			}
