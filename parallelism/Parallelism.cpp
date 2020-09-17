@@ -4,6 +4,7 @@
 #include "llvm/IR/Instructions.h"
 #include "llvm/IR/IntrinsicInst.h"
 #include "llvm/IR/DebugInfoMetadata.h"
+#include "fstream"
 
 #include <map>
 
@@ -17,6 +18,10 @@ namespace {
 		static char ID;
 		//define derivate from a FunctionPass class
 		ParallelismPass() : FunctionPass(ID) {}
+
+		int id = 1;
+		std::map<Instruction*,std::string> nodes;
+		std::vector<std::pair<Instruction*, Instruction* >> edges;
 
 		//define maps and their iterators
 		std::map<Instruction*, int> map_instr_cycle_asap;
@@ -56,10 +61,13 @@ namespace {
 				if (inst && !inst->isTerminator()){
 					//cycle is always the max between the current value and the cycle value returned from recursion
 					cycle=std::max(cycle,1+asap(*inst,llvm_bb)); 
+					edges.push_back({inst,&llvm_instruction});
 				}
 			}
 			//insert instruction and cycle value in the map
 			map_instr_cycle_asap.insert({&llvm_instruction, cycle});
+			std::string instName = llvm_instruction.getOpcodeName()+std::to_string(id++);
+      		nodes.insert({&llvm_instruction,std::move(instName)});
 
 			//get greatest number of cycles
 			if(cycle > greatest_cycle) greatest_cycle = cycle;
@@ -138,6 +146,20 @@ namespace {
 			}
 		}
 
+		void printDFG(std::string &filename){
+			std::ofstream file;
+			file.open(filename.c_str(), std::ios::out);
+			file << "digraph {\n";
+			for (auto &node: nodes){
+				file << "  " << node.second << " ;\n";
+			}
+			for (auto &e: edges){
+				file << "  " << nodes[e.first] << " -> " << nodes[e.second] << " ;\n";
+			}
+			file << "}\n";
+			file.close();
+		}
+
 		//run on each funcion basic block
 		void runOnBasicBlocks(Function &llvm_function) {
 			//foreach basic block
@@ -148,6 +170,9 @@ namespace {
 				greatest_cycle = 0;
 				cycle = 0;
 				inst_list.clear();
+				nodes.clear(); 
+				edges.clear();
+				id = 1;
 
 				errs() << "\n\n-- Basic Block: " << ++cont_bb << " --\n";
 
@@ -155,6 +180,13 @@ namespace {
 
 				//run on basick block instructions
 				runOnInstructions(llvm_function, bb_llvm);
+
+				std::string filename("./report_files/");
+				filename.append(llvm_function.getName());
+				filename.append("/BB");
+				filename.append(std::to_string(cont_bb));
+				filename.append(".gv");
+				printDFG(filename);
 			}
 		}
 
