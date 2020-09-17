@@ -37,7 +37,7 @@ namespace {
 			//if the instruction parent is not this same basic block, then it has no dependencies on this basic block. 
 			//Its parent comes from another basic block above. So its cycle is -1.
 			if (llvm_instruction.getParent() != &llvm_bb)
-				return 0;
+				return -1;
 
 			//define var cycle
 			int cycle = 0;
