@@ -24,7 +24,12 @@ namespace {
 		std::map<Instruction*, int>::iterator it_map_instr_cycle;
 		std::map<Instruction*, int>::reverse_iterator r_it_map_instr_cycle;
 
+		//define vars to cycle
 		int greatest_cycle = 0;
+		int cycle = 0;
+
+		//number of basic blocks
+		int cont_bb = 0;
 
 		//run on each file function
 		virtual bool runOnFunction(Function &llvm_function) {
@@ -40,6 +45,14 @@ namespace {
 		void runOnBasicBlocks(Function &llvm_function) {
 			//foreach basic block
 			for (auto &bb_llvm : llvm_function.getBasicBlockList()){
+
+				map_instr_cycle_asap.clear();
+				map_instr_cycle_alap.clear();
+				greatest_cycle = 0;
+				cycle = 0;
+
+				errs() << "\n\n-- Basic Block: " << ++cont_bb << " --\n";
+
 				//run on basick block instructions
 				runOnInstructions(llvm_function, bb_llvm);
 			}
@@ -77,16 +90,19 @@ namespace {
 			//get greatest number of cycles
 			if(cycle > greatest_cycle) greatest_cycle = cycle;
 
+			if(llvm_instruction.isTerminator())
+				cycle = greatest_cycle;
+
 			//return the cycle value
 			return cycle;
 		}
 
 		//Cycles As Late As Possible
-		int alap(Instruction &llvm_instruction, BasicBlock &llvm_bb, int cycle){
+		int alap(Instruction &llvm_instruction, BasicBlock &llvm_bb, int greatest_cycle, int cycle){
 			//if the instruction parent is not this same basic block, then it has no dependencies on this basic block. 
 			//Its parent comes from another basic block above. So its cycle is -1.
 			if (llvm_instruction.getParent() != &llvm_bb)
-				return -1;
+				return greatest_cycle;
 
 			//check if this instruction cycle is already in the map
 			it_map_instr_cycle = map_instr_cycle_alap.find(&llvm_instruction);
@@ -101,11 +117,14 @@ namespace {
 				//if it is a instruction
 				if (inst){
 					//cycle is always the min between the current value and the cycle value returned from recursion
-					cycle=std::min(cycle,alap(*inst,llvm_bb, cycle)-1); 
+					cycle=std::min(cycle,alap(*inst,llvm_bb, greatest_cycle, cycle)-1); 
 				}
 			}
 			//insert instruction and cycle value in the map
 			map_instr_cycle_alap.insert({&llvm_instruction, cycle});
+
+			if(llvm_instruction.isTerminator())
+				cycle = greatest_cycle;
 
 			//return the cycle value
 			return cycle;
@@ -113,10 +132,8 @@ namespace {
 		
 		//run on instructions
 		void runOnInstructions(Function &llvm_function, BasicBlock &bb_llvm) {
-			int cycle = 0;
-
 			//print ASAP Cycles
-			errs() << "\n\n--- ASAP ---\n";
+			errs() << "\n--- ASAP ---\n";
 			//foreach instruction on basick block
 			for (auto &llvm_instruction : bb_llvm.getInstList()) {
 				//cast instruction to debug instruction
@@ -133,12 +150,12 @@ namespace {
 			errs() << "\n\n--- ALAP ---\n";
 			//use reverse iterator to go through instructions
 			for (r_it_map_instr_cycle = map_instr_cycle_asap.rbegin(); r_it_map_instr_cycle != map_instr_cycle_asap.rend(); ++r_it_map_instr_cycle) {
-				alap(*r_it_map_instr_cycle->first,bb_llvm, greatest_cycle);
+				alap(*r_it_map_instr_cycle->first,bb_llvm, greatest_cycle, greatest_cycle);
 			}
 			//print ALAP Cycles
 			for (it_map_instr_cycle = map_instr_cycle_alap.begin(); it_map_instr_cycle != map_instr_cycle_alap.end(); ++it_map_instr_cycle) {
 				errs() << " Cycle "<< it_map_instr_cycle->second <<  ": "<< it_map_instr_cycle->first->getOpcodeName() << " (" << *it_map_instr_cycle->first << ")\n";
-			}			
+			}	
 		}
 	};
 } // namespace llvm
