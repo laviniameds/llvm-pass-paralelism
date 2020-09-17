@@ -89,7 +89,8 @@ namespace {
 
 			//get greatest number of cycles
 			if(cycle > greatest_cycle) greatest_cycle = cycle;
-
+			
+			//if it is a terminator instruction, it belongs to the last cycle
 			if(llvm_instruction.isTerminator())
 				cycle = greatest_cycle;
 
@@ -100,9 +101,9 @@ namespace {
 		//Cycles As Late As Possible
 		int alap(Instruction &llvm_instruction, BasicBlock &llvm_bb, int greatest_cycle, int cycle){
 			//if the instruction parent is not this same basic block, then it has no dependencies on this basic block. 
-			//Its parent comes from another basic block above. So its cycle is -1.
+			//Its parent comes from another basic block above. So it belongs to the last cycle.
 			if (llvm_instruction.getParent() != &llvm_bb)
-				return greatest_cycle;
+				return greatest_cycle+1;
 
 			//check if this instruction cycle is already in the map
 			it_map_instr_cycle = map_instr_cycle_alap.find(&llvm_instruction);
@@ -123,8 +124,9 @@ namespace {
 			//insert instruction and cycle value in the map
 			map_instr_cycle_alap.insert({&llvm_instruction, cycle});
 
+			//if it is a terminator instruction, it belongs to the last cycle
 			if(llvm_instruction.isTerminator())
-				cycle = greatest_cycle;
+				cycle = greatest_cycle+1;
 
 			//return the cycle value
 			return cycle;
