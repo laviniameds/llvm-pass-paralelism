@@ -19,9 +19,9 @@ namespace {
 		//define derivate from a FunctionPass class
 		ParallelismPass() : FunctionPass(ID) {}
 
-		int id = 1;
-		std::map<Instruction*,std::string> nodes;
-		std::vector<std::pair<Instruction*, Instruction* >> edges;
+		// int id = 1;
+		// std::map<Instruction*,std::string> nodes;
+		// std::vector<std::pair<Instruction*, Instruction* >> edges;
 
 		//define maps and their iterators
 		std::map<Instruction*, int> map_instr_cycle_asap;
@@ -36,6 +36,8 @@ namespace {
 
 		//number of basic blocks
 		int cont_bb = 0;
+
+		std::ofstream file;
 
 		//Cycles As Soon As Possible 
 		int asap(Instruction &llvm_instruction, BasicBlock &llvm_bb){
@@ -61,13 +63,14 @@ namespace {
 				if (inst && !inst->isTerminator()){
 					//cycle is always the max between the current value and the cycle value returned from recursion
 					cycle=std::max(cycle,1+asap(*inst,llvm_bb)); 
-					edges.push_back({inst,&llvm_instruction});
+					//edges.push_back({inst,&llvm_instruction});
 				}
 			}
 			//insert instruction and cycle value in the map
 			map_instr_cycle_asap.insert({&llvm_instruction, cycle});
-			std::string instName = llvm_instruction.getOpcodeName()+std::to_string(id++);
-      		nodes.insert({&llvm_instruction,std::move(instName)});
+			
+			// std::string instName = llvm_instruction.getOpcodeName()+std::to_string(id++);
+      		// nodes.insert({&llvm_instruction,std::move(instName)});
 
 			//get greatest number of cycles
 			if(cycle > greatest_cycle) greatest_cycle = cycle;
@@ -119,46 +122,51 @@ namespace {
 		//run on instructions
 		void runOnInstructions(Function &llvm_function, BasicBlock &bb_llvm) {
 			//print ASAP Cycles
-			errs() << "\n--- ASAP ---\n";
+			file << "\n--- ASAP ---\n";
 			//foreach instruction on basick block
 			for (auto &llvm_instruction : inst_list) {
 					cycle = asap(*llvm_instruction,bb_llvm);
 					//print the instruction asap cycle
-     				errs() << " Cycle "<< cycle <<  ": "<< llvm_instruction->getOpcodeName() << "( " << *llvm_instruction << " )\n";
+     				file << " Cycle "<< cycle <<  ": "<< llvm_instruction->getOpcodeName() << "\n";
 			}
 
 			//ALAP Cycles
-			errs() << "\n\n--- ALAP ---\n";
+			file << "\n\n--- ALAP ---\n";
 			//use reverse iterator to go through instructions
 			for (r_it_map_instr_cycle = map_instr_cycle_asap.rbegin(); r_it_map_instr_cycle != map_instr_cycle_asap.rend(); ++r_it_map_instr_cycle) {
 				alap(*r_it_map_instr_cycle->first,bb_llvm, greatest_cycle, greatest_cycle);
 			}
 			//print ALAP Cycles
 			for (it_map_instr_cycle = map_instr_cycle_alap.begin(); it_map_instr_cycle != map_instr_cycle_alap.end(); ++it_map_instr_cycle) {
-				errs() << " Cycle "<< it_map_instr_cycle->second <<  ": "<< it_map_instr_cycle->first->getOpcodeName() << "( " << *it_map_instr_cycle->first << " )\n";
+				file << " Cycle "<< it_map_instr_cycle->second <<  ": "<< it_map_instr_cycle->first->getOpcodeName() << "\n";
 			}	
 
 			//print mobility
-			errs() <<"\n\n--- Mobility ---\n";
+			file <<"\n\n--- Instructions Mobility ---\n";
 			for(it_map_instr_cycle = map_instr_cycle_asap.begin(); it_map_instr_cycle != map_instr_cycle_asap.end(); ++it_map_instr_cycle){
 				int c_alap = map_instr_cycle_alap.find(it_map_instr_cycle->first)->second;
-				errs() << it_map_instr_cycle->first->getOpcodeName() << ": " << (c_alap - it_map_instr_cycle->second) << "\n";
-			}
+				file << it_map_instr_cycle->first->getOpcodeName() << ": " << (c_alap - it_map_instr_cycle->second) << "\n";				
+			}			
 		}
 
-		void printDFG(std::string &filename){
-			std::ofstream file;
-			file.open(filename.c_str(), std::ios::out);
-			file << "digraph {\n";
-			for (auto &node: nodes){
-				file << "  " << node.second << " ;\n";
-			}
-			for (auto &e: edges){
-				file << "  " << nodes[e.first] << " -> " << nodes[e.second] << " ;\n";
-			}
-			file << "}\n";
-			file.close();
-		}
+		// void printDFG(std::string &filename){
+			// std::string filename("./graph_visual/");
+			// filename.append(llvm_function.getName());
+			// filename.append("_");
+			// filename.append(std::to_string(cont_bb));
+			// filename.append(".gv");
+			// 	std::ofstream file;
+			// 	file.open(filename.c_str(), std::ios::out);
+			// 	file << "digraph {\n";
+			// 	for (auto &node: nodes){
+			// 		file << "  " << node.second << " ;\n";
+			// 	}
+			// 	for (auto &e: edges){
+			// 		file << "  " << nodes[e.first] << " -> " << nodes[e.second] << " ;\n";
+			// 	}
+			// 	file << "}\n";
+			// 	file.close();
+		// }
 
 		//run on each funcion basic block
 		void runOnBasicBlocks(Function &llvm_function) {
@@ -170,32 +178,40 @@ namespace {
 				greatest_cycle = 0;
 				cycle = 0;
 				inst_list.clear();
-				nodes.clear(); 
-				edges.clear();
-				id = 1;
+				// nodes.clear(); 
+				// edges.clear();
+				// id = 1;
 
-				errs() << "\n\n-- Basic Block: " << ++cont_bb << " --\n";
+				file << "\n\n--- Begin of Basic Block: " << ++cont_bb << " ---\n";
 
 				filterInstructions(llvm_function, bb_llvm);
 
 				//run on basick block instructions
 				runOnInstructions(llvm_function, bb_llvm);
 
-				std::string filename("./report_files/");
-				filename.append(llvm_function.getName());
-				filename.append("/BB");
-				filename.append(std::to_string(cont_bb));
-				filename.append(".gv");
-				printDFG(filename);
+				file << "\n\n--- End of Basic Block: " << cont_bb << " ---\n";
+
+				// printDFG(filename, contbb);
 			}
 		}
 
 		//run on each file function
 		virtual bool runOnFunction(Function &llvm_function) {
+			cont_bb = 0;
+			file.clear();
+			std::string filename("./report_files/");
+			filename.append(llvm_function.getName());
+			filename.append(".txt");
+			file.open(filename.c_str(), std::ios::out);
+			std::string f_name(llvm_function.getName());
+
+			file << "LLVM Parallelism Pass by Lavinia Miranda" <<"\n\n";
 			//print funcion name
-			errs() << "Function: " << llvm_function.getName() << "\n";
+			file << "Function: " << f_name;
 			//run on each function basic block 
 			runOnBasicBlocks(llvm_function);
+
+			file.close();
 			
 			return false;
 		}
