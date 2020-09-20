@@ -1,0 +1,74 @@
+LLVM Parallelism Pass by Lavinia Miranda
+
+Function: f
+
+--- Begin of Basic Block: 1 ---
+
+--- ASAP ---
+ Cycle 0: mul
+ Cycle 0: add
+ Cycle 1: icmp
+
+
+--- ALAP ---
+ Cycle 0: mul
+ Cycle 0: add
+ Cycle 1: icmp
+
+
+--- Instructions Mobility ---
+mul: 0
+add: 0
+icmp: 0
+
+
+--- End of Basic Block: 1 ---
+
+
+--- Begin of Basic Block: 2 ---
+
+--- ASAP ---
+ Cycle 0: add
+ Cycle 1: add
+ Cycle 2: add
+ Cycle 3: add
+ Cycle 2: add
+
+
+--- ALAP ---
+ Cycle 0: add
+ Cycle 1: add
+ Cycle 2: add
+ Cycle 3: add
+ Cycle 3: add
+
+
+--- Instructions Mobility ---
+add: 0
+add: 0
+add: 0
+add: 0
+add: 1
+
+
+--- End of Basic Block: 2 ---
+
+
+--- Begin of Basic Block: 3 ---
+
+--- ASAP ---
+ Cycle 0: phi
+ Cycle 1: mul
+
+
+--- ALAP ---
+ Cycle 0: phi
+ Cycle 1: mul
+
+
+--- Instructions Mobility ---
+phi: 0
+mul: 0
+
+
+--- End of Basic Block: 3 ---

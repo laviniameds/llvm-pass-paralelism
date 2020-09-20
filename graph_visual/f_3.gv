@@ -1,0 +1,7 @@
+digraph {
+  phi1 ;
+  mul2 ;
+   -> phi1 ;
+   -> mul2 ;
+  phi1 -> mul2 ;
+}

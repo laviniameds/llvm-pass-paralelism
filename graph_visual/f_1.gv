@@ -1,0 +1,7 @@
+digraph {
+  mul1 ;
+  add2 ;
+  icmp3 ;
+  mul1 -> icmp3 ;
+  add2 -> icmp3 ;
+}

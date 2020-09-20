@@ -1,0 +1,25 @@
+LLVM Parallelism Pass by Lavinia Miranda
+
+Function: sum
+
+--- Begin of Basic Block: 1 ---
+
+--- ASAP ---
+ Cycle 0: add
+ Cycle 0: add
+ Cycle 1: add
+
+
+--- ALAP ---
+ Cycle 0: add
+ Cycle 0: add
+ Cycle 1: add
+
+
+--- Instructions Mobility ---
+add: 0
+add: 0
+add: 0
+
+
+--- End of Basic Block: 1 ---

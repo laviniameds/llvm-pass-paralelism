@@ -1,7 +1,0 @@
-digraph {
-  add1 ;
-  add2 ;
-  add3 ;
-  add1 -> add3 ;
-  add2 -> add3 ;
-}
