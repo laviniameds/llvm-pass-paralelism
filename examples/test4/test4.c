@@ -1,4 +1,4 @@
-int f(int a, int b, int c){ 
+int f2(int a, int b, int c){ 
   int x1,x2,x3,x4,x5,x6,x7,x8;;
   x1 = a*b;
   x2 = a+b;
@@ -11,11 +11,4 @@ int f(int a, int b, int c){
   }
   x8 = x1*x7;
   return x8; 
-}
-
-int sum(int a, int b, int c, int d){
-    int x = a + b;
-    int y = c + d;
-    int z = x+y;
-    return z;
 }
