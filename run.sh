@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # build project
-cd build/ && cmake .. && make && cd .. && echo ""\
+mkdir build && cd build/ && cmake .. && make && cd .. && echo ""\
 
 # testing pass
 src=$1
